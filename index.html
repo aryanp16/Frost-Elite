@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FROST ELITE | AERONYX OPS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           CORE BRANDING & THEME (AERONYX)
+           ========================================
+        */
+        :root { 
+            --bg-deep: #001220;
+            --bg-accent: #004e92;
+            --ice-blue: #00d2ff;
+            --deep-blue: #0072ff;
+            --onyx-black: #0f0f0f;
+            --aeronyx-gold: #ffd700;
+            --stealth-green: #39ff14;
+            --frost-white: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(0, 210, 255, 0.3);
+            --text-main: #ffffff;
+            --error-red: #ff4b2b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body, html { 
+            width: 100%; height: 100%; 
+            background: var(--bg-deep);
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+        }
+
+        /* ========================================
+           ANIMATED BACKGROUND (ATMOSPHERIC)
+           ========================================
+        */
+        .atmos-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #000c14 0%, #002d54 100%);
+            z-index: -2;
+        }
+
+        .snow-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* ========================================
+           DOCK & NAVIGATION
+           ========================================
+        */
+        .dock { 
+            position: fixed; 
+            bottom: 25px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 92%; 
+            height: 70px; 
+            background: rgba(0, 18, 32, 0.85); 
+            backdrop-filter: blur(25px); 
+            border-radius: 24px; 
+            border: 1px solid var(--glass-border); 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            z-index: 1000; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+
+        .nav-item { 
+            background: none; 
+            border: none; 
+            color: rgba(255,255,255,0.4); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 9px; 
+            font-weight: 700; 
+            letter-spacing: 1px; 
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            font-family: 'Orbitron', sans-serif; 
+            cursor: pointer;
+        }
+
+        .nav-item i { font-size: 20px; margin-bottom: 2px; transition: 0.3s; }
+        .nav-item.active { color: var(--ice-blue); transform: translateY(-8px); }
+        .nav-item.active i { filter: drop-shadow(0 0 8px var(--ice-blue)); }
+
+        /* ========================================
+           PAGE SYSTEM
+           ========================================
+        */
+        .page { 
+            display: none; 
+            height: 100vh; 
+            width: 100%; 
+            flex-direction: column; 
+            overflow-y: auto; 
+            padding: 40px 24px 120px; 
+            box-sizing: border-box; 
+            position: absolute;
+            top: 0; left: 0;
+        }
+        
+        .active-page { display: flex; animation: slideUp 0.5s ease; }
+        
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(30px) scale(0.98); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        /* ========================================
+           COMPONENTS: CARDS & BUTTONS
+           ========================================
+        */
+        .header { margin-bottom: 30px; text-align: center; }
+        .header h1 { 
+            font-family: 'Orbitron', sans-serif; 
+            font-weight: 900; 
+            font-size: 28px; 
+            letter-spacing: 3px; 
+            background: linear-gradient(to right, #fff, var(--ice-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+        .header p { 
+            font-size: 10px; 
+            color: var(--ice-blue); 
+            letter-spacing: 4px; 
+            text-transform: uppercase; 
+            margin-top: 5px; 
+            font-weight: 800;
+        }
+
+        .item-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--frost-white);
+            border-radius: 22px;
+            padding: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-card:active { transform: scale(0.97); background: rgba(255, 255, 255, 0.07); }
+
+        .item-img-box {
+            width: 60px; height: 60px;
+            background: rgba(0, 210, 255, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .item-details { flex: 1; }
+        .item-details h4 { font-family: 'Orbitron', sans-serif; font-size: 16px; margin-bottom: 4px; }
+        .item-details p { font-size: 12px; color: var(--ice-blue); font-weight: 700; }
+
+        .add-btn {
+            background: var(--ice-blue);
+            color: var(--bg-deep);
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        /* ========================================
+           AERONYX FLIGHT HUD
+           ========================================
+        */
+        .hud-display {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid var(--stealth-green);
+            border-radius: 20px;
+            padding: 20px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: var(--stealth-green);
+            font-size: 11px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .radar-box {
+            width: 160px; height: 160px;
+            border: 2px solid var(--stealth-green);
+            border-radius: 50%;
+            margin: 20px auto;
+            position: relative;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, transparent 70%);
+            overflow: hidden;
+        }
+
+        .radar-sweep {
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent 50%, rgba(57, 255, 20, 0.3) 100%);
+            position: absolute;
+            animation: rotateRadar 4s linear infinite;
+            transform-origin: center;
+        }
+
+        @keyframes rotateRadar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* ========================================
+           MODAL SYSTEM (GLASSMORPHISM)
+           ========================================
+        */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 10, 20, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #000;
+            width: 100%;
+            border-radius: 30px 30px 0 0;
+            padding: 30px 24px 50px;
+            animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* ========================================
+           SQUAD PAGE CUSTOMS
+           ========================================
+        */
+        .member-strip {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--ice-blue);
+        }
+        
+        .initials-circle {
+            width: 45px; height: 45px;
+            background: var(--bg-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            margin-right: 15px;
+        }
+
+        /* ========================================
+           CART & CHECKOUT
+           ========================================
+        */
+        .cart-summary {
+            background: var(--ice-blue);
+            color: var(--bg-deep);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .checkout-input {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+
+        .deploy-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 15px;
+            border: none;
+            background: var(--ice-blue);
+            color: var(--bg-deep);
+            font-family: 'Orbitron';
+            font-weight: 900;
+            letter-spacing: 2px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="atmos-layer"></div>
+    <canvas id="snowCanvas" class="snow-canvas"></canvas>
+
+    <div id="page-home" class="page active-page">
+        <div class="header">
+            <p>Mankhool Sector • Season 7</p>
+            <h1>Frost Elite</h1>
+            <div class="item-card">
+                <p>After you open the whatsapp group type what you have ordered and how much it costs it will be delivered to your balcony take the food and put the money in the ziplock bag and then close it</p>
+            </div>
+            <div style="width: 40px; height: 2px; background: var(--ice-blue); margin: 15px auto;"></div>
+        </div>
+
+        <div class="item-card" style="height: 200px; flex-direction: column; justify-content: center; text-align: center; border: 1px dashed var(--ice-blue);">
+            <div id="main-status" style="font-family: 'Orbitron'; font-size: 22px; color: var(--ice-blue);">STATUS: READY ❄️</div>
+            <p style="margin: 10px 0 20px; opacity: 0.6; font-size: 14px;">Aeronyx-V1 Drone is fueled and on standby.</p>
+            <button class="deploy-btn" onclick="navigateTo('shop')">ENTER MENU</button>
+        </div>
+    </div>
+
+    <div id="page-shop" class="page">
+        <div class="header">
+            <h1>The Menu</h1>
+            <p>Ice Cold Hydration</p>
+        </div>
+        
+        <div id="menu-container">
+            </div>
+    </div>
+
+    <div id="page-squad" class="page">
+        <div class="header">
+            <h1>The Squad</h1>
+            <p>Aeronyx Elite Personnel</p>
+        </div>
+
+        <div id="squad-list">
+            <div class="member-strip">
+                <div class="initials-circle">AR</div>
+                <div class="item-details">
+                    <h4>Aryan</h4>
+                    <p>Drone flyer</p>
+                </div>
+            </div>
+            <div class="member-strip">
+                <div class="initials-circle">YV</div>
+                <div class="item-details">
+                    <h4>Yahvi</h4>
+                    <p>Chief Item Maker</p>
+                </div>
+            </div>
+            <div class="member-strip">
+                <div class="initials-circle">PH</div>
+                <div class="item-details">
+                    <h4>Pihu</h4>
+                    <p>Budget Manager</p>
+                </div>
+            </div>
+            <div class="member-strip">
+                <div class="initials-circle">PT</div>
+                <div class="item-details">
+                    <h4>Puneet</h4>
+                    <p>Supply Logistics</p>
+                </div>
+            </div>
+            <div class="member-strip">
+                <div class="initials-circle">EV</div>
+                <div class="item-details">
+                    <h4>Eva</h4>
+                    <p>Squad Operations</p>
+                </div>
+            </div>
+            <div class="member-strip">
+                <div class="initials-circle">PU</div>
+                <div class="item-details">
+                    <h4>Purav</h4>
+                    <p>Banner maker</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-ops" class="page">
+        <div class="header">
+            <h1>Flight Ops</h1>
+            <p>Real-Time Telemetry</p>
+        </div>
+
+        <div class="hud-display">
+            <div style="display: flex; justify-content: space-between;">
+                <span>DRONE: AERONYX-V1</span>
+                <span id="telemetry-alt">ALT: 00m</span>
+            </div>
+            <div class="radar-box">
+                <div class="radar-sweep"></div>
+                <div id="drone-blip" style="position: absolute; width: 6px; height: 6px; background: #fff; border-radius: 50%; top: 40%; left: 60%; box-shadow: 0 0 10px #fff;"></div>
+            </div>
+            <div id="console-log">> WAITING FOR MISSION START...</div>
+        </div>
+    </div>
+
+    <div id="page-cart" class="page">
+        <div class="header">
+            <h1>Your Pack</h1>
+            <p>Ready for Deployment</p>
+        </div>
+
+            <p id="cart-note" style="font-size: 14px; color:#00d2ff; align-self: center; text-align: center; max-width: 400px;">
+               When you press the ORDER button, this app will open whatsapp join the group and then press paste and then send the order.
+            </p>
+
+        <div id="cart-items">
+            </div>
+
+        <div id="cart-empty-msg" style="text-align: center; padding: 40px; opacity: 0.5;">
+            Your mission payload is empty.
+        </div>
+
+        <div id="cart-footer" style="display: none;">
+            <input type="text" id="flat-num" class="checkout-input" placeholder="Flat Number (e.g. 402)">
+            <input type="text" id="building-name" class="checkout-input" placeholder="Building Name">
+            <textarea placeholder="Description" class="checkout-input"></textarea>
+            
+            <div class="cart-summary">
+                <div style="font-size: 12px; margin-bottom: 5px; opacity: 0.8;">MISSION COST</div>
+                <div id="total-price" style="font-size: 32px; font-weight: 900; font-family: 'Orbitron';">0.00 AED</div>
+            </div>
+
+            <button class="deploy-btn" style="background: var(--stealth-green);" onclick="startMission()">Order</button>
+        </div>
+    </div>
+
+    <div id="main-modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 id="modal-title" style="font-family: 'Orbitron'; margin-bottom: 10px;">Item Name</h2>
+            <p id="modal-desc" style="color: #666; margin-bottom: 20px;">Delicious description goes here.</p>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f0f0; padding: 15px; border-radius: 15px;">
+                <span style="font-weight: 800;">Quantity</span>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <button onclick="changeQty(-1)" style="border: none; background: none; font-size: 24px;">-</button>
+                    <span id="modal-qty" style="font-weight: 900; font-size: 20px;">1</span>
+                    <button onclick="changeQty(1)" style="border: none; background: none; font-size: 24px;">+</button>
+                </div>
+            </div>
+
+            <button id="modal-action-btn" class="deploy-btn" style="margin-top: 20px;">ADD TO PACK</button>
+        </div>
+    </div>
+
+    <div id="admin-modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" style="background: var(--bg-deep); color: white; border-top: 2px solid var(--ice-blue);">
+            <h2 style="font-family: 'Orbitron'; color: var(--ice-blue);">ADMIN CONSOLE</h2>
+            <div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>REVENUE</span>
+                    <span id="admin-rev">0.00 AED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--error-red);">
+                    <span>COSTS</span>
+                    <span>-0.00 AED</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #333; padding-top: 10px; font-weight: 800; color: var(--stealth-green);">
+                    <span>NET PROFIT</span>
+                    <span id="admin-profit">0.00 AED</span>
+                </div>
+            </div>
+            <button class="deploy-btn" onclick="closeModal()">CLOSE SYSTEM</button>
+        </div>
+    </div>
+
+    <div class="dock">
+        <button class="nav-item active" id="nav-home" onclick="navigateTo('home')">
+            <i>🏠</i><span>BASE</span>
+        </button>
+        <button class="nav-item" id="nav-shop" onclick="navigateTo('shop')">
+            <i>🍹</i><span>MENU</span>
+        </button>
+        <button class="nav-item" id="nav-cart" onclick="navigateTo('cart')">
+            <i>📦</i><span>PACK</span>
+        </button>
+        <button class="nav-item" id="nav-ops" onclick="navigateTo('ops')">
+            <i>🚀</i><span>OPS</span>
+        </button>
+        <button class="nav-item" id="nav-squad" onclick="navigateTo('squad')">
+            <i>👥</i><span>SQUAD</span>
+        </button>
+    </div>
+
+<div id="float-cart-btn" onclick="nav('cart')" style="display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 85%; max-width: 400px;">
+    <button style="width: 100%; padding: 18px; border: none; border-radius: 15px; background: #00d2ff; color: black; font-family: 'Orbitron', sans-serif; font-weight: 900; cursor: pointer; box-shadow: 0 0 20px rgba(0, 210, 255, 0.5); text-transform: uppercase; letter-spacing: 1px;">
+        View Pack (<span id="float-count">0</span>) 🛒
+    </button>
+</div>
+    
+    <script>
+        /* ========================================
+           STATE MANAGEMENT
+           ========================================
+        */
+        const SQUAD_DATA = {
+            owner: "Aryan",
+            members: ["Yahvi", "Pihu", "Puneet", "Eva", "Baghya", "purav"],
+            finance: { revenue: 0, cost: 0, profit: 0 }
+        };
+
+        const MENU_ITEMS = [
+            { id: 1, name: "Mineral Water", price: 2.00, icon: "💧", desc: "Chilled pure hydration." },
+            { id: 2, name: "Elite Juice", price: 3.00, icon: "🧃", desc: "Fresh fruit extraction." },
+            { id: 3, name: "Frost Popsicle", price: 5.00, icon: "🍦", desc: "Homemade frozen delight." },
+            { id: 4, name: "Lemonade", price: 4.00, icon: "🍋", desc: "Freshly squeezed zest." },
+            { id: 5, name: "Frost Chocolate", price: 3.00, icon: "🍫", desc: "Dark elite cocoa." },
+            { id: 6, name: "Masala Makhana", price: 3.00, icon: "🍿", desc: "Yahvi's special spice mix." },
+            { id: 7, name: "Parle-G Sandwich", price: 5.00, icon: "🍪", desc: "The ultimate nostalgia snack." },
+            { id: 8, name: "Masala Corn", price: 5.00, icon: "🌽", desc: "Steamy and spicy." },
+            { id: 9, name: "Elite Kurkure", price: 3.00, icon: "🌶️", desc: "The crunch of Season 7." },
+            { id: 10, name: "Elite Dry Bhel", price: 4.00, icon: "🥣", desc: "Puneet's logistics favorite." },
+            { id: 11, name: "Kokum Frost", price: 4.00, icon: "🍷", desc: "Deep red herbal chill." },
+            { id: 12, name: "Shrikhand Ice Cream", price: 5.00, icon: "🍨", desc: "Kesar flavored premium cup." }
+        ];
+
+        let state = {
+            currentCart: [],
+            activeItem: null,
+            tempQty: 1,
+            missionsCompleted: 14
+        };
+
+        /* ========================================
+           CORE FUNCTIONS
+           ========================================
+        */
+
+        function init() {
+            renderMenu();
+            initSnow();
+            updateUI();
+        }
+
+        function navigateTo(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById('page-' + pageId).classList.add('active-page');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('nav-' + pageId).classList.add('active');
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = MENU_ITEMS.map(item => `
+                <div class="item-card" onclick="openItemDetail(${item.id})">
+                    <div class="item-img-box">${item.icon}</div>
+                    <div class="item-details">
+                        <h4>${item.name}</h4>
+                        <p>${item.price.toFixed(2)} AED</p>
+                    </div>
+                    <button class="add-btn">+</button>
+                </div>
+            `).join('');
+        }
+
+        function openItemDetail(id) {
+            const item = MENU_ITEMS.find(i => i.id === id);
+            state.activeItem = item;
+            state.tempQty = 1;
+            
+            document.getElementById('modal-title').innerText = item.name;
+            document.getElementById('modal-desc').innerText = item.desc;
+            document.getElementById('modal-qty').innerText = state.tempQty;
+            document.getElementById('modal-action-btn').onclick = addToCart;
+            
+            document.getElementById('main-modal').style.display = 'flex';
+        }
+
+        function changeQty(amt) {
+            state.tempQty = Math.max(1, state.tempQty + amt);
+            document.getElementById('modal-qty').innerText = state.tempQty;
+        }
+
+        function addToCart() {
+            const existing = state.currentCart.find(i => i.id === state.activeItem.id);
+            if(existing) {
+                existing.qty += state.tempQty;
+            } else {
+                state.currentCart.push({ ...state.activeItem, qty: state.tempQty });
+            }
+            closeModal();
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const list = document.getElementById('cart-items');
+            const footer = document.getElementById('cart-footer');
+            const empty = document.getElementById('cart-empty-msg');
+            
+            if(state.currentCart.length === 0) {
+                list.innerHTML = "";
+                footer.style.display = "none";
+                empty.style.display = "block";
+                return;
+            }
+
+            empty.style.display = "none";
+            footer.style.display = "block";
+            
+            let total = 0;
+            list.innerHTML = state.currentCart.map(item => {
+                total += (item.price * item.qty);
+                return `
+                    <div class="item-card">
+                        <div class="item-img-box">${item.icon}</div>
+                        <div class="item-details">
+                            <h4>${item.name}</h4>
+                            <p>${item.qty} x ${item.price.toFixed(2)} AED</p>
+                        </div>
+                        <button style="background:none; border:none; color:#ff4b2b; font-weight:800;" onclick="removeItem(${item.id})">REMOVE</button>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('total-price').innerText = total.toFixed(2) + " AED";
+        }
+
+        function removeItem(id) {
+            state.currentCart = state.currentCart.filter(i => i.id !== id);
+            updateCartUI();
+        }
+
+function startMission() {
+    const f = document.getElementById('flat-num').value;
+    const b = document.getElementById('building-name').value;
+
+    if(!f || !b) {
+        alert("Enter details");
+        return;
+    }
+
+    if(state.currentCart.length === 0) {
+        alert("Cart is empty!");
+        return;
+    }
+
+    let itemsText = "";
+    state.currentCart.forEach(i => {
+        itemsText += `• ${i.name} x${i.qty} = ${i.price * i.qty} AED\n`;
+    });
+
+    const total = document.getElementById('total-price').innerText;
+
+    const message =
+`🛒 FROST ELITE ORDER
+
+📦 Items:
+${itemsText}
+
+💰 Total: ${total}
+
+📍 Flat: ${f}
+🏢 Building: ${b}`;
+
+    // copy automatically
+    navigator.clipboard.writeText(message).then(() => {
+        
+        // open group
+        window.open("https://chat.whatsapp.com/BTf0dz40RKnCHxjI0h53QJ", "_blank");
+
+        alert("Message copied ✅\nOpen group → Paste → Send");
+    });
+}
+        function runTelemetryAnimation(target) {
+            const log = document.getElementById('console-log');
+            const alt = document.getElementById('telemetry-alt');
+            let steps = [
+                "> INITIALIZING ROTORS...",
+                "> GPS LOCK: SECURED",
+                "> CLIMBING TO 12M...",
+                "> EN ROUTE TO FLAT " + target,
+                "> OBSTACLE DETECTION: OFF",
+                "> PAYLOAD DELIVERED.",
+                "> RETURNING TO BASE."
+            ];
+
+            let i = 0;
+            let currentAlt = 0;
+            
+            const interval = setInterval(() => {
+                if(i < steps.length) {
+                    log.innerHTML += `<br>${steps[i]}`;
+                    i++;
+                    currentAlt = Math.floor(Math.random() * 5) + 10;
+                    alt.innerText = `ALT: ${currentAlt}m`;
+                } else {
+                    clearInterval(interval);
+                    alert("Mission Successful! Aryan, check the vault.");
+                    state.currentCart = [];
+                    updateCartUI();
+                }
+            }, 1500);
+        }
+
+        
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        }
+
+        function openAdminPanel() {
+            document.getElementById('admin-modal').style.display = 'flex';
+        }
+
+        /* ========================================
+           ATMOSPHERIC SNOW EFFECT
+           ========================================
+        */
+        function initSnow() {
+            const canvas = document.getElementById('snowCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            for(let i=0; i<100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 3 + 1,
+                    d: Math.random() * 1
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0,0, canvas.width, canvas.height);
+                ctx.fillStyle = "rgba(255,255,255,0.4)";
+                ctx.beginPath();
+                for(let i=0; i<particles.length; i++) {
+                    let p = particles[i];
+                    ctx.moveTo(p.x, p.y);
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+                }
+                ctx.fill();
+                updateParticles();
+            }
+
+            function updateParticles() {
+                for(let i=0; i<particles.length; i++) {
+                    let p = particles[i];
+                    p.y += Math.cos(p.d) + 1 + p.r/2;
+                    p.x += Math.sin(p.d) * 2;
+                    if(p.y > canvas.height) {
+                        particles[i] = { x: Math.random()*canvas.width, y: -10, r: p.r, d: p.d };
+                    }
+                }
+            }
+            setInterval(draw, 30);
+        }
+
+        window.onload = init;
+
+        /* AERONYX DEPLOYMENT ENGINE 
+   Link: https://chat.whatsapp.com/BTf0dz40RKnCHxjI0h53QJ
+*/
+
+const GROUP_LINK = "https://chat.whatsapp.com/BTf0dz40RKnCHxjI0h53QJ";
+
+function sendOrderToWhatsAppGroup(orderItems, total, address) {
+
+    // 1. Create message
+    let itemsText = "";
+    orderItems.forEach(i => {
+        itemsText += `• ${i.name} x${i.qty} = $${i.price * i.qty}\n`;
+    });
+
+    const message =
+`🛒 NEW ORDER RECEIVED
+
+📦 Items:
+${itemsText}
+
+💰 Total: $${total}
+
+📍 Address: ${address}
+
+🔥 Sent from Blue Food Store`;
+
+    // 2. Copy message
+    navigator.clipboard.writeText(message).then(() => {
+
+        // 3. Open WhatsApp group
+        window.open(GROUP_LINK, "_blank");
+
+        alert("Order copied! 📋\nNow paste it in WhatsApp group.");
+
+    });
+}
+
+    </script>
+</body>
+</html>
